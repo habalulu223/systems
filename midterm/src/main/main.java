@@ -33,12 +33,12 @@ public class main {
             switch (choice) {
                 case 1:
                     // Register new user
-                    System.out.print("Enter desired username: ");
-                    String username = sc.nextLine();
-                    System.out.print("Enter Email: ");
-                    String Gmail = sc.nextLine();
-                    System.out.print("Enter password: ");
-                    String password = sc.nextLine();
+                    // ⭐️ VALIDATION ADDED
+                    String username = getNonBlankInput(sc, "Enter desired username: ");
+                    // ⭐️ VALIDATION ADDED
+                    String Gmail = getNonBlankInput(sc, "Enter Email: ");
+                    // ⭐️ VALIDATION ADDED
+                    String password = getNonBlankInput(sc, "Enter password: ");
 
                     // ⭐️ CHANGED: Call static method in this class
                     boolean registered = registerUser(cf, username, password, Gmail);
@@ -51,21 +51,21 @@ public class main {
 
 
                 case 2:
-                
-                    System.out.print("Enter Email: ");
-                    String loginEmail = sc.nextLine(); 
-                    System.out.print("Enter password: ");
-                    String loginPass = sc.nextLine();
-                    
+
+                    // ⭐️ VALIDATION ADDED
+                    String loginEmail = getNonBlankInput(sc, "Enter Email: ");
+                    // ⭐️ VALIDATION ADDED
+                    String loginPass = getNonBlankInput(sc, "Enter password: ");
+
                     // ⭐️ CHANGED: Call static method in this class
                     String loggedInUsername = loginUser(cf, loginEmail, loginPass);
 
-                    
+
                     if (loggedInUsername != null) {
                         System.out.println("Login successful! Welcome, " + loggedInUsername + "!");
-                        
+
                         // ⭐️ CHANGED: Call static method in this class
-                        if (isAdmin(cf, loginEmail)) { 
+                        if (isAdmin(cf, loginEmail)) {
                             adminMenu(sc, cf, loggedInUsername, loginEmail);
                         } else {
                             userMenu(sc, cf, loggedInUsername, loginEmail);
@@ -75,7 +75,7 @@ public class main {
                     }
                     break;
 
-                    
+
 
                 case 3:
                     System.out.println("Exiting program. Goodbye! 👋");
@@ -90,11 +90,34 @@ public class main {
     }
 
     // --------------------------------------------------------------------------------------------------
+    // ⭐️⭐️⭐️ NEW HELPER METHOD FOR VALIDATION ⭐️⭐️⭐️
+    // --------------------------------------------------------------------------------------------------
+    /**
+     * Helper method to repeatedly ask for a non-blank string input.
+     * It trims whitespace and checks if the result is empty.
+     * @param sc The Scanner object to use.
+     * @param prompt The message to display to the user.
+     * @return A non-blank (and trimmed) String.
+     */
+    private static String getNonBlankInput(Scanner sc, String prompt) {
+        String input = "";
+        while (input.trim().isEmpty()) {
+            System.out.print(prompt);
+            input = sc.nextLine();
+            if (input.trim().isEmpty()) {
+                System.out.println("Input cannot be blank. Please try again.");
+            }
+        }
+        return input.trim(); // Return the trimmed, valid input
+    }
+
+
+    // --------------------------------------------------------------------------------------------------
     // Regular user menu
     // --------------------------------------------------------------------------------------------------
     private static void userMenu(Scanner sc, dbConnect cf, String username, String email) {
         while (true) {
-            System.out.println("\n--- User Menu for " + username + " ---"); 
+            System.out.println("\n--- User Menu for " + username + " ---");
             System.out.println("1. View Products");
             System.out.println("2. Make Transaction");
             System.out.println("3. Make Payment");
@@ -122,10 +145,10 @@ public class main {
                 case 2:
                     System.out.println("Available Products:");
                     // ⭐️ CHANGED: Calls the single logic method directly
-                    viewProducts(cf); 
+                    viewProducts(cf);
 
                     // ⭐️ CHANGED: Call static method
-                    int user_id = getUserId(cf, email); 
+                    int user_id = getUserId(cf, email);
                     if (user_id <= 0) {
                         System.out.println("Error: User ID not found. Cannot proceed with transaction.");
                         break;
@@ -159,20 +182,20 @@ public class main {
                         // 2. Check if the transaction was found
                         if (txnDetails != null) {
                             String status = (String) txnDetails.get("status");
-                            
+
                             // 3. Check if it's 'pending_payment'
                             if (!"pending_payment".equalsIgnoreCase(status)) {
                                 System.out.println("Error: This transaction is already '" + status + "' and cannot be paid.");
                                 break; // Exit case 3
                             }
-                            
+
                             // 4. Get price
                             double amountDue = ((Number) txnDetails.get("total_price")).doubleValue();
-                            
+
                             System.out.println("---------------------------------");
                             System.out.printf("Amount Due: %.2f PHP\n", amountDue);
                             System.out.print("Enter cash payment: ");
-                            
+
                             // 5. Get cash payment
                             double cashPaid = sc.nextDouble();
                             sc.nextLine(); // consume newline
@@ -183,7 +206,7 @@ public class main {
                             } else {
                                 // 7. Cash is sufficient, proceed with payment
                                 boolean success = makePayment(cf, email, transactionId);
-                                
+
                                 if (success) {
                                     double change = cashPaid - amountDue;
                                     System.out.println("\nPayment Successful!");
@@ -197,9 +220,9 @@ public class main {
                                 }
                             }
                         } else {
-                             System.out.println("Payment failed. Transaction not found, already paid, or does not belong to you.");
+                            System.out.println("Payment failed. Transaction not found, already paid, or does not belong to you.");
                         }
-                        
+
                     } catch (InputMismatchException e) {
                         System.out.println("Invalid input. Please enter numbers for ID or cash.");
                         sc.nextLine();
@@ -254,8 +277,8 @@ public class main {
 
     private static void addProduct(Scanner sc, dbConnect cf, String adminUsername) {
         System.out.println("\n--- Add Product ---");
-        System.out.print("Enter product name: ");
-        String name = sc.nextLine();
+        // ⭐️ VALIDATION ADDED
+        String name = getNonBlankInput(sc, "Enter product name: ");
         try {
             System.out.print("Enter product price: ");
             double price = sc.nextDouble();
@@ -278,8 +301,8 @@ public class main {
             System.out.print("Enter ID of product to update: ");
             int updateId = sc.nextInt();
             sc.nextLine(); // consume newline
-            System.out.print("Enter new product name: ");
-            String newName = sc.nextLine();
+            // ⭐️ VALIDATION ADDED
+            String newName = getNonBlankInput(sc, "Enter new product name: ");
             System.out.print("Enter new product price: ");
             double newPrice = sc.nextDouble();
             System.out.print("Enter new product stock quantity: ");
@@ -321,9 +344,9 @@ public class main {
     private static void approveUser(Scanner sc, dbConnect cf) {
         viewPendingUsers(cf); // This now correctly calls the single logic method
         System.out.println("\n--- Approve User ---");
-        System.out.print("Enter username to approve: ");
-        String userToApprove = sc.nextLine();
-        
+        // ⭐️ VALIDATION ADDED
+        String userToApprove = getNonBlankInput(sc, "Enter username to approve: ");
+
         // ⭐️ CHANGED: Call static method (using the improved logic from before)
         approveUser(cf, userToApprove);
         // Note: The success/fail messages are now handled inside the approveUser logic method
@@ -332,9 +355,9 @@ public class main {
     private static void promoteUserToAdmin(Scanner sc, dbConnect cf, String adminUsername, String adminEmail) {
         viewUsers(cf); // This now correctly calls the single logic method
         System.out.println("\n--- Promote User to Admin ---");
-        System.out.print("Enter account name to promote as admin: ");
-        String userToPromote = sc.nextLine();
-        
+        // ⭐️ VALIDATION ADDED
+        String userToPromote = getNonBlankInput(sc, "Enter account name to promote as admin: ");
+
         // ⭐️ CHANGED: Call static method
         boolean success = makeUserAdmin(cf, userToPromote, adminEmail);
         if (success) {
@@ -349,7 +372,7 @@ public class main {
     // --------------------------------------------------------------------------------------------------
     // Transaction Management Methods (for Admin Menu)
     // --------------------------------------------------------------------------------------------------
-    
+
     private static void deleteAnyTransaction(Scanner sc, dbConnect cf, String adminUsername) {
         System.out.println("\n--- Force Delete ANY Transaction ---");
         try {
@@ -380,8 +403,10 @@ public class main {
             System.out.println("6. Promote User to Admin");
             System.out.println("7. View All Accounts");
             System.out.println("--- Transaction Management ---");
-            System.out.println("8. Delete ANY Transaction (No Stock Restore!)");
-            System.out.println("9. Logout");
+            // ⭐️ NEW/CHANGED OPTIONS
+            System.out.println("8. View All Sales Report");
+            System.out.println("9. Delete ANY Transaction (No Stock Restore!)");
+            System.out.println("10. Logout");
             System.out.print("Enter choice: ");
 
             int option = -1;
@@ -416,14 +441,18 @@ public class main {
                 case 7:
                     viewUsers(cf); // This now correctly calls the single logic method
                     break;
-                case 8: 
-                    // ⭐️ CHANGED: Call static method
-                    viewTransactions(cf, email);
-                    deleteAnyTransaction(sc, cf, username);
+                // ⭐️ NEW/CHANGED CASES
+                case 8:
+                    viewAllSalesReport(cf); // New method call
                     break;
                 case 9:
+                    // ⭐️ LOGIC FIX: Show ALL transactions, not just admin's
+                    viewAllTransactions(cf);
+                    deleteAnyTransaction(sc, cf, username);
+                    break;
+                case 10:
                     System.out.println("Logging out " + username + "...");
-                    return; 
+                    return;
                 default:
                     System.out.println("Invalid option. Please try again.");
             }
@@ -449,9 +478,9 @@ public class main {
         String checkSql = "SELECT user_id FROM tbl_user WHERE username = ? OR email = ?";
         // ⭐️ CHANGED: Call with 'cf.'
         if (!cf.fetchRecords(checkSql, username, Gmail).isEmpty()) {
-            return false; 
+            return false;
         }
-        
+
         // ⭐️ CHANGED: Call static method from dbConnect class
         String hashedPass = dbConnect.hashPassword(password);
         if (hashedPass == null) return false;
@@ -461,21 +490,21 @@ public class main {
         return cf.addRecord(sql, username, Gmail, hashedPass);
     }
 
-    
+
     private static String loginUser(dbConnect cf, String email, String password) {
-        
+
         String sql = "SELECT username, password FROM tbl_user WHERE email = ? AND status = 'approved'";
         // ⭐️ CHANGED: Call with 'cf.'
         List<Map<String, Object>> users = cf.fetchRecords(sql, email);
-        
+
         if (users.isEmpty()) {
             return null; // User not found or not approved
         }
-        
+
         String storedHash = users.get(0).get("password").toString();
         // ⭐️ CHANGED: Call static method from dbConnect class
         String hashedPass = dbConnect.hashPassword(password);
-        
+
         // Check if passwords match
         if (storedHash.equals(hashedPass)) {
             return users.get(0).get("username").toString();
@@ -490,11 +519,11 @@ public class main {
         String sql = "SELECT role FROM tbl_user WHERE email = ?";
         // ⭐️ CHANGED: Call with 'cf.'
         List<Map<String, Object>> users = cf.fetchRecords(sql, email);
-        
+
         if (users.isEmpty()) {
             return false;
         }
-        
+
         String role = users.get(0).get("role").toString();
         return "admin".equalsIgnoreCase(role);
     }
@@ -503,11 +532,11 @@ public class main {
         String sql = "SELECT user_id FROM tbl_user WHERE email = ?";
         // ⭐️ CHANGED: Call with 'cf.'
         List<Map<String, Object>> users = cf.fetchRecords(sql, email);
-        
+
         if (users.isEmpty()) {
-            return -1; 
+            return -1;
         }
-        
+
         return (Integer) users.get(0).get("user_id");
     }
 
@@ -531,15 +560,15 @@ public class main {
             System.out.println("Error: User '" + username + "' not found.");
             return false;
         }
-        
+
         String currentStatus = users.get(0).get("status").toString();
-        
+
         if ("approved".equalsIgnoreCase(currentStatus)) {
             // CASE 2: User is already approved
             System.out.println("Info: User '" + username + "' is already approved.");
-            return false; 
+            return false;
         }
-        
+
         if (!"pending".equalsIgnoreCase(currentStatus)) {
             // CASE 3: User is 'banned', 'rejected', etc.
             System.out.println("Error: User '" + username + "' has status '" + currentStatus + "' and cannot be approved.");
@@ -548,24 +577,24 @@ public class main {
 
         // CASE 4: User exists and is 'pending'. Proceed with update.
         String updateSql = "UPDATE tbl_user SET status = 'approved' WHERE username = ?";
-        
-        boolean success = cf.updateRecord(updateSql, username); 
-        
+
+        boolean success = cf.updateRecord(updateSql, username);
+
         if (success) {
             System.out.println("Success: User '" + username + "' has been approved.");
         } else {
             System.out.println("Error: Failed to update user status in the database.");
         }
-        
+
         return success;
     }
 
-    private static boolean makeUserAdmin(dbConnect cf, String userToPromote, String adminEmail) { 
+    private static boolean makeUserAdmin(dbConnect cf, String userToPromote, String adminEmail) {
         String checkSelfSql = "SELECT user_id FROM tbl_user WHERE username = ? AND email = ?";
         // ⭐️ CHANGED: Call with 'cf.'
         if (!cf.fetchRecords(checkSelfSql, userToPromote, adminEmail).isEmpty()) {
-             System.out.println("Error: Admin cannot change their own role.");
-             return false;
+            System.out.println("Error: Admin cannot change their own role.");
+            return false;
         }
 
         String sql = "UPDATE tbl_user SET role = 'admin' WHERE username = ? AND role = 'user'";
@@ -627,25 +656,75 @@ public class main {
     // ⭐️ TRANSACTION MANAGEMENT METHODS ⭐️
     //-----------------------------------------------
 
+    // ⭐️⭐️⭐️ NEW METHOD ⭐️⭐️⭐️
+    private static void viewAllSalesReport(dbConnect cf) {
+        System.out.println("\n--- All Sales Report ---");
+        
+        // 1. Show all transactions from all users
+        String allTxnSql = "SELECT t.transaction_id, u.username, p.name, t.quantity, t.total_price, t.status, t.transaction_date " +
+                           "FROM tbl_transactions t " +
+                           "JOIN tbl_products p ON t.product_id = p.product_id " +
+                           "JOIN tbl_user u ON t.user_id = u.user_id " +
+                           "ORDER BY t.status DESC, t.transaction_date DESC";
+        
+        String[] headers = {"Txn ID", "User", "Product", "Qty", "Total", "Status", "Date"};
+        String[] columns = {"transaction_id", "username", "name", "quantity", "total_price", "status", "transaction_date"};
+        
+        cf.viewRecords(allTxnSql, headers, columns); // This will print the table or "No transactions found."
+
+        // 2. Calculate and show total sales from "paid" transactions
+        String salesSql = "SELECT SUM(total_price) AS total_sales FROM tbl_transactions WHERE status = 'paid'";
+        
+        List<Map<String, Object>> result = cf.fetchRecords(salesSql);
+        
+        double totalSales = 0.0;
+        
+        if (!result.isEmpty() && result.get(0).get("total_sales") != null) {
+            // Use Number to handle different SQL numeric types (like BigDecimal)
+            totalSales = ((Number) result.get(0).get("total_sales")).doubleValue();
+        }
+
+        System.out.println("\n---------------------------------");
+        System.out.printf("💰 Total Sales (from 'paid' transactions): %.2f PHP\n", totalSales);
+        System.out.println("---------------------------------");
+    }
+
+    // ⭐️⭐️⭐️ NEW HELPER METHOD ⭐️⭐️⭐️
+    /**
+     * Shows all transactions from all users. Used before deleting.
+     */
+    private static void viewAllTransactions(dbConnect cf) {
+        System.out.println("\n--- View All Transactions (All Users) ---");
+        String sql = "SELECT t.transaction_id, u.username, p.name, t.quantity, t.total_price, t.status " +
+                       "FROM tbl_transactions t " +
+                       "JOIN tbl_products p ON t.product_id = p.product_id " +
+                       "JOIN tbl_user u ON t.user_id = u.user_id " +
+                       "ORDER BY t.transaction_id DESC";
+        String[] headers = {"Txn ID", "User", "Product", "Qty", "Total", "Status"};
+        String[] columns = {"transaction_id", "username", "name", "quantity", "total_price", "status"};
+        cf.viewRecords(sql, headers, columns);
+    }
+
+
     private static void makeTransaction(dbConnect cf, String email, int userId, int productId, int quantity) {
         String productSql = "SELECT price, stock FROM tbl_products WHERE product_id = ?";
         // ⭐️ CHANGED: Call with 'cf.'
         List<Map<String, Object>> products = cf.fetchRecords(productSql, productId);
-        
+
         if (products.isEmpty()) {
             System.out.println("Error: Product ID " + productId + " not found.");
             return;
         }
-        
-        
+
+
         double price = ((Number) products.get(0).get("price")).doubleValue();
-        
-        
+
+
         int stock = ((Number) products.get(0).get("stock")).intValue();
 
         if (quantity <= 0) {
-             System.out.println("Error: Quantity must be greater than 0.");
-             return;
+            System.out.println("Error: Quantity must be greater than 0.");
+            return;
         }
         if (quantity > stock) {
             System.out.println("Error: Not enough stock. Available: " + stock);
@@ -663,8 +742,8 @@ public class main {
         }
 
         String insertTxnSql = "INSERT INTO tbl_transactions (user_id, product_id, quantity, total_price, status, transaction_date) " +
-                                 "VALUES (?, ?, ?, ?, 'pending_payment', CURRENT_TIMESTAMP)";
-        
+                "VALUES (?, ?, ?, ?, 'pending_payment', CURRENT_TIMESTAMP)";
+
         // ⭐️ CHANGED: Call with 'cf.'
         if (cf.addRecord(insertTxnSql, userId, productId, quantity, totalPrice)) {
             System.out.println("Transaction created successfully! Total: " + totalPrice);
@@ -684,14 +763,14 @@ public class main {
             System.out.println("Error: Could not find user.");
             return;
         }
-        
+
         String sql = "SELECT t.transaction_id, p.name, t.quantity, t.total_price, t.status, t.transaction_date " +
-                       "FROM tbl_transactions t JOIN tbl_products p ON t.product_id = p.product_id " +
-                       "WHERE t.user_id = ? ORDER BY t.transaction_id DESC";
-        
+                "FROM tbl_transactions t JOIN tbl_products p ON t.product_id = p.product_id " +
+                "WHERE t.user_id = ? ORDER BY t.transaction_id DESC";
+
         String[] headers = {"Txn ID", "Product", "Qty", "Total", "Status", "Date"};
         String[] columns = {"transaction_id", "name", "quantity", "total_price", "status", "transaction_date"};
-        
+
         // ⭐️ CHANGED: Call with 'cf.'
         cf.viewRecords(sql, headers, columns, userId);
     }
@@ -703,23 +782,23 @@ public class main {
             System.out.println("Error: Could not find user account.");
             return null;
         }
-        
+
         String sql = "SELECT total_price, status FROM tbl_transactions WHERE transaction_id = ? AND user_id = ?";
         java.util.List<java.util.Map<String, Object>> txns = cf.fetchRecords(sql, transactionId, userId);
-        
+
         if (txns.isEmpty()) {
             return null; // The menu will handle the "not found" message
         }
-        
-        return txns.get(0); 
+
+        return txns.get(0);
     }
-    
+
     // ⭐️ MOVED: This is the "silent" makePayment method for the cash/change logic
     private static boolean makePayment(dbConnect cf, String email, int transactionId) {
         int userId = getUserId(cf, email); // Call our static helper
         String sql = "UPDATE tbl_transactions SET status = 'paid' " +
-                     "WHERE transaction_id = ? AND user_id = ? AND status = 'pending_payment'";
-        
+                "WHERE transaction_id = ? AND user_id = ? AND status = 'pending_payment'";
+
         return cf.updateRecord(sql, transactionId, userId);
     }
 
@@ -730,12 +809,12 @@ public class main {
         String oldTxnSql = "SELECT product_id, quantity, status FROM tbl_transactions WHERE transaction_id = ? AND user_id = ?";
         // ⭐️ CHANGED: Call with 'cf.'
         List<Map<String, Object>> txns = cf.fetchRecords(oldTxnSql, transactionId, userId);
-        
+
         if (txns.isEmpty()) {
             System.out.println("Error: Transaction " + transactionId + " not found or does not belong to you.");
             return;
         }
-        
+
         int productId = (Integer) txns.get(0).get("product_id");
         int oldQuantity = (Integer) txns.get(0).get("quantity");
         String status = (String) txns.get(0).get("status");
@@ -752,18 +831,18 @@ public class main {
             System.out.println("Error: Associated product not found. Aborting.");
             return;
         }
-        
+
         double price = ((Number) products.get(0).get("price")).doubleValue(); // Safe cast
         int currentStock = ((Number) products.get(0).get("stock")).intValue(); // Safe cast
-        
+
         int quantityChange = newQuantity - oldQuantity;
-        int newStock = currentStock - quantityChange; 
-        
+        int newStock = currentStock - quantityChange;
+
         if (newStock < 0) {
             System.out.println("Error: Not enough stock for new quantity. Only " + (currentStock + oldQuantity) + " total available.");
             return;
         }
-        
+
         String updateStockSql = "UPDATE tbl_products SET stock = ? WHERE product_id = ?";
         // ⭐️ CHANGED: Call with 'cf.'
         if (!cf.updateRecord(updateStockSql, newStock, productId)) {
@@ -789,16 +868,16 @@ public class main {
         String oldTxnSql = "SELECT product_id, quantity, status FROM tbl_transactions WHERE transaction_id = ? AND user_id = ?";
         // ⭐️ CHANGED: Call with 'cf.'
         List<Map<String, Object>> txns = cf.fetchRecords(oldTxnSql, transactionId, userId);
-        
+
         if (txns.isEmpty()) {
             System.out.println("Error: Transaction " + transactionId + " not found or does not belong to you.");
             return;
         }
-        
+
         int productId = (Integer) txns.get(0).get("product_id");
         int oldQuantity = (Integer) txns.get(0).get("quantity");
         String status = (String) txns.get(0).get("status");
-        
+
         if (!"pending_payment".equals(status)) {
             System.out.println("Error: Cannot delete a transaction that is already paid. Contact an admin.");
             return;
@@ -811,7 +890,7 @@ public class main {
         if (!products.isEmpty()) {
             currentStock = ((Number) products.get(0).get("stock")).intValue(); // Safe cast
         }
-        
+
         int newStock = currentStock + oldQuantity;
         String updateStockSql = "UPDATE tbl_products SET stock = ? WHERE product_id = ?";
         // Example:
