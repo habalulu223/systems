@@ -9,15 +9,13 @@ import java.util.LinkedHashMap; // Important for maintaining column order
 
 public class dbConnect {
 
-    public static Connection connectDB() {
-        Connection con = null;
-        try {
-            Class.forName("org.sqlite.JDBC");
-            con = DriverManager.getConnection("jdbc:sqlite:gradingsystemdb.db"); 
-        } catch (Exception e) {
-            System.out.println("Connection Failed: " + e);
-        }
-        return con;
+    /**
+     * MODIFIED: This method now throws exceptions on failure instead of 
+     * returning null, which prevents NullPointerExceptions.
+     */
+    public static Connection connectDB() throws SQLException, ClassNotFoundException {
+        Class.forName("org.sqlite.JDBC");
+        return DriverManager.getConnection("jdbc:sqlite:gradingsystemdb.db"); 
     }
 
     
@@ -50,36 +48,39 @@ public class dbConnect {
     //-----------------------------------------------
 
     public boolean addRecord(String sql, Object... values) {
-        try (Connection conn = this.connectDB();
+        // MODIFIED: Updated catch block for new exceptions from connectDB()
+        try (Connection conn = dbConnect.connectDB();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setPreparedStatementValues(pstmt, values);
             pstmt.executeUpdate();
             return true;
-        } catch (SQLException e) {
+        } catch (SQLException | ClassNotFoundException e) {
             System.out.println("Error adding record: " + e.getMessage());
             return false;
         }
     }
 
     public boolean updateRecord(String sql, Object... values) {
-        try (Connection conn = this.connectDB();
+        // MODIFIED: Updated catch block for new exceptions from connectDB()
+        try (Connection conn = dbConnect.connectDB();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setPreparedStatementValues(pstmt, values);
             int affectedRows = pstmt.executeUpdate();
             return affectedRows > 0;
-        } catch (SQLException e) {
+        } catch (SQLException | ClassNotFoundException e) {
             System.out.println("Error updating record: " + e.getMessage());
             return false;
         }
     }
 
     public boolean deleteRecord(String sql, Object... values) {
-        try (Connection conn = this.connectDB();
+        // MODIFIED: Updated catch block for new exceptions from connectDB()
+        try (Connection conn = dbConnect.connectDB();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setPreparedStatementValues(pstmt, values);
             int affectedRows = pstmt.executeUpdate();
             return affectedRows > 0;
-        } catch (SQLException e) {
+        } catch (SQLException | ClassNotFoundException e) {
             System.out.println("Error deleting record: " + e.getMessage());
             return false;
         }
@@ -88,7 +89,8 @@ public class dbConnect {
     public java.util.List<java.util.Map<String, Object>> fetchRecords(String sqlQuery, Object... values) {
         java.util.List<java.util.Map<String, Object>> records = new java.util.ArrayList<>();
 
-        try (Connection conn = this.connectDB();
+        // MODIFIED: Updated catch block for new exceptions from connectDB()
+        try (Connection conn = dbConnect.connectDB();
              PreparedStatement pstmt = conn.prepareStatement(sqlQuery)) {
 
             setPreparedStatementValues(pstmt, values); // Use our helper
@@ -105,7 +107,7 @@ public class dbConnect {
                 records.add(row);
             }
 
-        } catch (SQLException e) {
+        } catch (SQLException | ClassNotFoundException e) {
             System.out.println("Error fetching records: " + e.getMessage());
         }
 
@@ -114,7 +116,8 @@ public class dbConnect {
 
     public double getSingleValue(String sql, Object... params) {
         double result = 0.0;
-        try (Connection conn = connectDB();
+        // MODIFIED: Updated catch block for new exceptions from connectDB()
+        try (Connection conn = dbConnect.connectDB();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             setPreparedStatementValues(pstmt, params);
@@ -123,7 +126,7 @@ public class dbConnect {
                 result = rs.getDouble(1);
             }
 
-        } catch (SQLException e) {
+        } catch (SQLException | ClassNotFoundException e) {
             System.out.println("Error retrieving single value: " + e.getMessage());
         }
         return result;
@@ -131,7 +134,8 @@ public class dbConnect {
 
     public int addRecordAndReturnId(String query, Object... params) {
         int generatedId = -1;
-        try (Connection conn = connectDB();
+        // MODIFIED: Updated catch block for new exceptions from connectDB()
+        try (Connection conn = dbConnect.connectDB();
              PreparedStatement pstmt = conn.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS)) {
 
             setPreparedStatementValues(pstmt, params); // Use our helper
@@ -144,7 +148,7 @@ public class dbConnect {
                     }
                 }
             }
-        } catch (SQLException e) {
+        } catch (SQLException | ClassNotFoundException e) {
             System.out.println("Error inserting record: " + e.getMessage());
         }
         return generatedId;
@@ -175,7 +179,8 @@ public class dbConnect {
         List<Map<String, String>> records = new ArrayList<>();
         Map<String, Integer> columnWidths = new LinkedHashMap<>();
 
-        try (Connection conn = this.connectDB();
+        // MODIFIED: Updated catch block for new exceptions from connectDB()
+        try (Connection conn = dbConnect.connectDB();
              PreparedStatement pstmt = conn.prepareStatement(sqlQuery)) {
 
             setPreparedStatementValues(pstmt, values);
@@ -203,7 +208,7 @@ public class dbConnect {
                     records.add(row);
                 }
             }
-        } catch (SQLException e) {
+        } catch (SQLException | ClassNotFoundException e) {
             System.out.println("Error retrieving records: " + e.getMessage());
             return; 
         }
@@ -222,18 +227,14 @@ public class dbConnect {
         if (records.isEmpty()) {
             System.out.println("| " + String.format("%-" + (separator.length() - 4) + "s", "No records found.") + " |");
         } else {
-            for (Map<String, String> record : records) {
-                Object[] rowValues = record.values().toArray();
+            records.stream().map((record) -> record.values().toArray()).forEachOrdered((rowValues) -> {
                 System.out.println(String.format(formatString, rowValues));
-            }
+            });
         }
         System.out.println(separator);
     }
 
-    //-----------------------------------------------
-    // PASSWORD HASHING
-    //-----------------------------------------------
-
+   
     public static String hashPassword(String password) {
         try {
             java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
